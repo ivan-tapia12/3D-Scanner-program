@@ -65,7 +65,9 @@ handles.output = hObject;
 %     textl=sprintf('Arduino port was not closed');
 %     set(handles.text1,'String',textl);
 % end
+handles.s=serial('com7','Baudrate',9600);
 handles.Flagcom=0;
+handles.Flagdir=0;
 handles.ypos=1;
 handles.col=1;
 handles.Object=zeros;
@@ -140,16 +142,31 @@ guidata(hObject,handles);
 % --- Executes on button press in pushbutton4.
 function pushbutton4_Callback(hObject, eventdata, handles)
 %Recieves values from arduino and stores them in a matrix with xyz format
+s=handles.s;
+s.ReadAsyncMode='manual';
+set(s,'InputBuffersize',1);
 ypos=handles.ypos;
 col=handles.col;
 col2=col+4;
 Object=handles.Object;
-xpos=1;
+xpos=0;
+if handles.Flagdir==0
 for c=col:col2 
-   Object(c,1)=xpos;
+   Object(c,1)=xpos+1;
    Object(c,2)=ypos;
-   Object(c,3)=handles.calib-10;  
+   Object(c,3)=handles.calib-str2num(fscanf(s));  
    xpos=xpos+1;
+   pause(3);
+end
+handles.Flagdir=1;
+elseif handles.Flagdir==1
+    for c=col:col2 
+   Object(c,1)=5-xpos;
+   Object(c,2)=ypos;
+   Object(c,3)=handles.calib-str2num(fscanf(s));  
+   xpos=xpos+1;
+    end
+    handles.Flagdir=0;
 end
 textl=sprintf('Sweep completed');
 set(handles.text5,'String',textl);
@@ -222,14 +239,15 @@ guidata(hObject,handles);
 
 % --- Executes on button press in pushbutton9.
 function pushbutton9_Callback(hObject, eventdata, handles)
+s=handles.s;
+s.ReadAsyncMode='manual';
+set(s,'InputBuffersize',1);
 if handles.Flagcom==0
     %setup serial communication
-s=serial('com7','Baudrate',9600);
-s.ReadAsyncMode='manual';
-set(s,'InputBuffersize',2);
 try
     fopen(s);
     handles.Flagcom=1;
+    handles.s=s;
     textl=sprintf('Serial communication open');
     set(handles.text5,'String',textl);
     guidata(hObject,handles);
@@ -255,8 +273,11 @@ end
 % --- Executes on button press in pushbutton11.
 function pushbutton11_Callback(hObject, eventdata, handles)
 %calibrates the distance from sensor to floor
-handles.calib=15;
-textl=sprintf('Sensor Calibrated');
+s=handles.s;
+s.ReadAsyncMode='manual';
+set(s,'InputBuffersize',1);
+handles.calib=str2num(fscanf(s));
+textl=sprintf('Sensor Calibrated with %d',handles.calib);
 set(handles.text5,'String',textl);
 guidata(hObject,handles);
 % hObject    handle to pushbutton11 (see GCBO)
@@ -268,7 +289,10 @@ guidata(hObject,handles);
 function pushbutton12_Callback(hObject, eventdata, handles)
 handles.Object=zeros;
 cla(handles.axes1,'reset');
-textl=sprintf('Data was cleared');
+handles.Flagdir=0;
+handles.ypos=1;
+handles.col=1;
+textl=sprintf('Data cleared');
 set(handles.text5,'String',textl);
 guidata(hObject,handles);
 % hObject    handle to pushbutton12 (see GCBO)
