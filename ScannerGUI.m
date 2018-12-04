@@ -22,7 +22,7 @@ function varargout = ScannerGUI(varargin)
 
 % Edit the above text to modify the response to help ScannerGUI
 
-% Last Modified by GUIDE v2.5 03-Dec-2018 13:03:06
+% Last Modified by GUIDE v2.5 04-Dec-2018 12:06:09
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -65,11 +65,13 @@ handles.output = hObject;
 %     textl=sprintf('Arduino port was not closed');
 %     set(handles.text1,'String',textl);
 % end
+handles.Flagcom=0;
 handles.ypos=1;
 handles.col=1;
 handles.Object=zeros;
-v = evalin('base','Test');
-handles.Test=v;
+handles.calib=17;
+% v = evalin('base','Test');
+% handles.Test=v;
 textl=sprintf('3D Scanner GUI');
 set(handles.text1,'String',textl);
 % Update handles structure
@@ -97,6 +99,8 @@ function pushbutton1_Callback(hObject, eventdata, handles)
      surf(X,Y,Z) 
      shading flat
      camlight
+    textl=sprintf('Data surface plot displayed');
+    set(handles.text5,'String',textl);
 
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -108,6 +112,8 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 Test=handles.Object;
 scatter3(Test(:,1),Test(:,2),Test(:,3))
 axis equal
+    textl=sprintf('Data Scatter graph displayed');
+    set(handles.text5,'String',textl);
 % hObject    handle to pushbutton2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -115,7 +121,17 @@ axis equal
 
 % --- Executes on button press in pushbutton3.
 function pushbutton3_Callback(hObject, eventdata, handles)
-b_smooth = medfilt2(b,[5 5]));
+%smooths the surface of the plot by using a moving average filter on the z
+%values
+Object=handles.Object;
+Smooth = Object(:,3);
+Smooth = conv(Smooth, ones(3,1)/3, 'same');
+Object(:,3)=Smooth;
+handles.Object=Object;
+textl=sprintf('Moving average filter applied');
+set(handles.text5,'String',textl);
+guidata(hObject,handles);
+
 % hObject    handle to pushbutton3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -132,9 +148,11 @@ xpos=1;
 for c=col:col2 
    Object(c,1)=xpos;
    Object(c,2)=ypos;
-   Object(c,3)=5;  
+   Object(c,3)=handles.calib-10;  
    xpos=xpos+1;
 end
+textl=sprintf('Sweep completed');
+set(handles.text5,'String',textl);
 handles.col=col+5;
 handles.ypos=ypos+1;
 handles.Object=Object;
@@ -175,6 +193,8 @@ function pushbutton6_Callback(hObject, eventdata, handles)
 Object=handles.Object;
 y = get(handles.edit1,'string');
 save(char(y),'Object');
+textl=sprintf('Data successfully saved');
+set(handles.text5,'String',textl);
 % hObject    handle to pushbutton6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -184,10 +204,73 @@ save(char(y),'Object');
 function pushbutton7_Callback(hObject, eventdata, handles)
 %Loads the file with the name in the 
 y = get(handles.edit1,'string');
-mess = matfile(char(y));
-handles.Object = mess.Object;
+try
+    mess = matfile(char(y));
+    handles.Object = mess.Object;
+        textl=sprintf('File successfuly loaded into data');
+    set(handles.text5,'String',textl);
+catch err
+        textl=sprintf('A file with that name does not exist');
+    set(handles.text5,'String',textl);
+end
 guidata(hObject,handles);
 
 % hObject    handle to pushbutton7 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton9.
+function pushbutton9_Callback(hObject, eventdata, handles)
+if handles.Flagcom==0
+    %setup serial communication
+s=serial('com7','Baudrate',9600);
+s.ReadAsyncMode='manual';
+set(s,'InputBuffersize',2);
+try
+    fopen(s);
+    handles.Flagcom=1;
+    textl=sprintf('Serial communication open');
+    set(handles.text5,'String',textl);
+    guidata(hObject,handles);
+catch err
+    fclose(instrfind);
+    textl=sprintf('Serial communication unsuccessful');
+    set(handles.text5,'String',textl);
+    handles.Flagcom=0;
+    guidata(hObject,handles);
+end
+elseif handles.Flagcom==1
+    fclose(s)
+    handles.Flagcom=0;
+    textl=sprintf('Serial communication closed');
+    set(handles.text5,'String',textl);
+    guidata(hObject,handles);
+end
+% hObject    handle to pushbutton9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton11.
+function pushbutton11_Callback(hObject, eventdata, handles)
+%calibrates the distance from sensor to floor
+handles.calib=15;
+textl=sprintf('Sensor Calibrated');
+set(handles.text5,'String',textl);
+guidata(hObject,handles);
+% hObject    handle to pushbutton11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton12.
+function pushbutton12_Callback(hObject, eventdata, handles)
+handles.Object=zeros;
+cla(handles.axes1,'reset');
+textl=sprintf('Data was cleared');
+set(handles.text5,'String',textl);
+guidata(hObject,handles);
+% hObject    handle to pushbutton12 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
