@@ -22,7 +22,7 @@ function varargout = ScannerGUI(varargin)
 
 % Edit the above text to modify the response to help ScannerGUI
 
-% Last Modified by GUIDE v2.5 04-Dec-2018 12:06:09
+% Last Modified by GUIDE v2.5 04-Dec-2018 16:58:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -143,8 +143,10 @@ guidata(hObject,handles);
 function pushbutton4_Callback(hObject, eventdata, handles)
 %Recieves values from arduino and stores them in a matrix with xyz format
 s=handles.s;
-s.ReadAsyncMode='manual';
-set(s,'InputBuffersize',1);
+textl=sprintf('Sweeping');
+set(handles.text5,'String',textl);
+set(s,'InputBuffersize',2);
+flushinput(s);
 ypos=handles.ypos;
 col=handles.col;
 col2=col+4;
@@ -163,7 +165,7 @@ elseif handles.Flagdir==1
     for c=col:col2 
    Object(c,1)=5-xpos;
    Object(c,2)=ypos;
-   Object(c,3)=handles.calib-str2num(fscanf(s));  
+   Object(c,3)=handles.calib-str2num(fscanf(s));
    xpos=xpos+1;
     end
     handles.Flagdir=0;
@@ -240,8 +242,7 @@ guidata(hObject,handles);
 % --- Executes on button press in pushbutton9.
 function pushbutton9_Callback(hObject, eventdata, handles)
 s=handles.s;
-s.ReadAsyncMode='manual';
-set(s,'InputBuffersize',1);
+set(s,'InputBuffersize',2);
 if handles.Flagcom==0
     %setup serial communication
 try
@@ -259,7 +260,7 @@ catch err
     guidata(hObject,handles);
 end
 elseif handles.Flagcom==1
-    fclose(s)
+    fclose(s);
     handles.Flagcom=0;
     textl=sprintf('Serial communication closed');
     set(handles.text5,'String',textl);
@@ -274,8 +275,8 @@ end
 function pushbutton11_Callback(hObject, eventdata, handles)
 %calibrates the distance from sensor to floor
 s=handles.s;
-s.ReadAsyncMode='manual';
-set(s,'InputBuffersize',1);
+set(s,'InputBuffersize',2);
+flushinput(s);
 handles.calib=str2num(fscanf(s));
 textl=sprintf('Sensor Calibrated with %d',handles.calib);
 set(handles.text5,'String',textl);
@@ -296,5 +297,14 @@ textl=sprintf('Data cleared');
 set(handles.text5,'String',textl);
 guidata(hObject,handles);
 % hObject    handle to pushbutton12 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton13.
+function pushbutton13_Callback(hObject, eventdata, handles)
+textl=sprintf('Welcome');
+set(handles.text5,'String',textl);
+% hObject    handle to pushbutton13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
